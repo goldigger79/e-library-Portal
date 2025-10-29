@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Tambah Ebook Baru</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-gray-100">
+
+    <div class="container mx-auto max-w-2xl p-8 my-10 bg-white rounded-lg shadow-xl">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">Halaman Admin - Tambah Ebook</h1>
+        <p class="text-gray-600 mb-2">Isi borang di bawah untuk menambah ebook baru terus ke pangkalan data Firebase.</p>
+        <p id="adminAuthStatus" class="text-sm font-medium text-blue-600 mb-6">Memeriksa status admin...</p>
+
+        <!-- Mesej Maklum Balas -->
+        <div id="messageContainer" class="hidden p-4 rounded-md mb-4"></div>
+
+        <form id="ebookForm" class="space-y-4">
+            <!-- ID Ebook tidak diperlukan, Firebase akan jana secara automatik -->
+
+            <div>
+                <label for="title" class="block text-sm font-medium text-gray-700">Tajuk Ebook</label>
+                <input type="text" id="title" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="Cth: Modul PDPR Bahasa Melayu" required>
+            </div>
+
+            <div>
+                <label for="author" class="block text-sm font-medium text-gray-700">Penulis / Penerbit</label>
+                <input type="text" id="author" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="Cth: Penerbit" required>
+            </div>
+            
+            <div>
+                <label for="cover" class="block text-sm font-medium text-gray-700">Pautan Gambar Kulit (Cover)</label>
+                <input type="url" id="cover" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="Cth: https://online.anyflip.com/icnak/rhem/files/shot.jpg" required>
+            </div>
+
+            <div>
+                <label for="flipbookUrl" class="block text-sm font-medium text-gray-700">Pautan Ebook (AnyFlip/FlipHTML)</label>
+                <input type="url" id="flipbookUrl" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="Cth: https://anyflip.com/icnak/rhem/" required>
+            </div>
+
+            <div>
+                <label for="synopsis" class="block text-sm font-medium text-gray-700">Sinopsis</label>
+                <textarea id="synopsis" rows="3" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="Penerangan ringkas tentang ebook ini." required></textarea>
+            </div>
+
+            <div>
+                <label for="tags" class="block text-sm font-medium text-gray-700">Tag (dipisahkan dengan koma)</label>
+                <input type="text" id="tags" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500" placeholder="Cth: pendidikan, modul, pdpr, sekolah">
+            </div>
+
+            <button type="submit" id="submitButton" class="w-full bg-indigo-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-indigo-700 transition-colors" disabled>
+                Simpan Ebook ke Firebase
+            </button>
+        </form>
+    </div>
+
+<!-- Firebase SDK -->
+<script type="module">
+    // Import fungsi yang diperlukan
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { 
+        getAuth, 
+        onAuthStateChanged, 
+        signInAnonymously,
+        signInWithCustomToken // Masih diimport tetapi tidak digunakan, boleh dibuang jika mahu
+    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { 
+        getFirestore, 
+        collection, 
+        addDoc,
+        setLogLevel
+    } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
+
+    // --- Konfigurasi Firebase ---
+    // Konfigurasi Firebase yang anda sediakan
+    const firebaseConfig = {
+      apiKey: "AIzaSyDUtYojGMeVDnax4UuBpwyCURJcH18_ZhA",
+      authDomain: "e-library-de7af.firebaseapp.com",
+      projectId: "e-library-de7af",
+      storageBucket: "e-library-de7af.firebasestorage.app",
+      messagingSenderId: "229459415793",
+      appId: "1:229459415793:web:52ab75e5d10e165738cf50",
+      measurementId: "G-G14WKLY40F"
+    };
+
+    // --- Inisialisasi Firebase ---
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const analytics = getAnalytics(app); // Tambah Analytics
+    setLogLevel('Debug');
+
+    // --- Rujukan Pangkalan Data ---
+    // Pastikan ini adalah laluan (path) yang sama seperti di index.html
+    // Laluan diubah suai untuk pangkalan data peribadi anda
+    const ebooksRef = collection(db, "ebooks");
+
+    // --- Elemen DOM ---
+    const ebookForm = document.getElementById('ebookForm');
+    const submitButton = document.getElementById('submitButton');
+    const adminAuthStatus = document.getElementById('adminAuthStatus');
+    const messageContainer = document.getElementById('messageContainer');
+    // --- DIKEMAS KINI: Tambah elemen input baru ---
+    const flipbookUrlInput = document.getElementById('flipbookUrl');
+    const coverInput = document.getElementById('cover');
+
+    // --- Autentikasi Admin ---
+    // Halaman ini mesti dilog masuk untuk menulis ke pangkalan data
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            console.log("Admin disahkan:", user.uid);
+            adminAuthStatus.textContent = `Log masuk sebagai: ${user.isAnonymous ? 'Admin Anonim' : user.email}`;
+            adminAuthStatus.classList.remove('text-blue-600');
+            adminAuthStatus.classList.add('text-green-600');
+            submitButton.disabled = false; // Aktifkan butang
+        } else {
+            console.log("Admin tidak disahkan.");
+            adminAuthStatus.textContent = "Gagal disahkan. Sila muat semula.";
+            adminAuthStatus.classList.add('text-red-600');
+            submitButton.disabled = true;
+        }
+    });
+
+    // Fungsi untuk log masuk admin
+    async function handleAdminAuth() {
+        try {
+            // DIKEMAS KINI: 
+            // Oleh kerana anda menggunakan projek Firebase peribadi anda, 
+            // kita tidak boleh menggunakan token auth (`__initial_auth_token`) dari persekitaran ini
+            // kerana ia akan menyebabkan ralat 'custom-token-mismatch'.
+            // Sebaliknya, kita log masuk secara anonim terus ke projek anda
+            // untuk mendapatkan kebenaran menulis (seperti dalam Security Rules anda).
+            await signInAnonymously(auth); 
+            console.log("Admin signed in anonymously.");
+            
+        } catch (error) {
+            console.error("Admin Authentication error:", error);
+            adminAuthStatus.textContent = "Gagal log masuk admin.";
+        }
+    }
+
+    // --- DIKEMAS KINI: Fungsi Automasi Pautan Cover ---
+    // Fungsi ini akan dijalankan apabila anda klik keluar dari kotak Pautan Ebook
+    flipbookUrlInput.addEventListener('blur', function() {
+        const url = this.value.trim();
+        
+        // Pastikan ia pautan AnyFlip yang sah dan bukan kosong
+        if (url.includes('anyflip.com/')) {
+            // Bina URL cover berdasarkan corak AnyFlip
+            // Cth: https://anyflip.com/icnak/rhem/
+            // Menjadi: https://online.anyflip.com/icnak/rhem/files/shot.jpg
+            
+            // Pastikan pautan berakhir dengan '/' untuk pembinaan URL yang betul
+            const cleanUrl = url.endsWith('/') ? url : url + '/';
+            
+            const coverUrl = cleanUrl.replace('anyflip.com/', 'online.anyflip.com/') + 'files/shot.jpg';
+            
+            // Isi medan cover secara automatik
+            coverInput.value = coverUrl;
+        }
+    });
+
+    // --- Fungsi Borang ---
+    ebookForm.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        // Tunjukkan mesej "memuat"
+        showMessage('Menyimpan ebook...', 'blue');
+        submitButton.disabled = true;
+
+        // Dapatkan nilai dari borang
+        const title = document.getElementById('title').value;
+        const author = document.getElementById('author').value;
+        const cover = document.getElementById('cover').value;
+        const flipbookUrl = document.getElementById('flipbookUrl').value;
+        const synopsis = document.getElementById('synopsis').value;
+        const tagsInput = document.getElementById('tags').value;
+
+        // Proses tags (simpan sebagai array)
+        const tags = tagsInput.split(',')
+                             .map(tag => tag.trim())
+                             .filter(tag => tag.length > 0); // Buang tag kosong
+
+        // Cipta objek ebook
+        const newEbook = {
+            title,
+            author,
+            cover,
+            flipbookUrl,
+            synopsis,
+            tags
+            // 'id' akan dijana secara automatik oleh Firestore
+        };
+
+        try {
+            // Tambah dokumen baru ke koleksi 'ebooks'
+            const docRef = await addDoc(ebooksRef, newEbook);
+            console.log("Ebook berjaya ditambah dengan ID: ", docRef.id);
+            
+            // Berjaya!
+            showMessage('Ebook berjaya ditambah! Ia akan muncul di perpustakaan.', 'green');
+            ebookForm.reset(); // Kosongkan borang
+
+        } catch (error) {
+            console.error("Gagal menyimpan ebook: ", error);
+            showMessage('Gagal menyimpan ebook. Sila periksa konsol.', 'red');
+        } finally {
+            submitButton.disabled = false; // Aktifkan semula butang
+        }
+    });
+
+    // Fungsi untuk tunjuk mesej maklum balas
+    function showMessage(text, color) {
+        messageContainer.textContent = text;
+        messageContainer.className = `p-4 rounded-md mb-4 bg-${color}-100 text-${color}-800`;
+        messageContainer.classList.remove('hidden');
+    }
+
+    // Mulakan autentikasi admin semasa muat
+    handleAdminAuth();
+</script>
+
+</body>
+</html>
+
+

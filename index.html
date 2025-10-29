@@ -1,0 +1,790 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 1. Title changed as requested -->
+    <title>e-Library Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- 1. Added EmailJS SDK (for staff notifications) -->
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f9fafb; /* Use Tailwind's gray-50 for a slightly warmer feel */
+        }
+        .nav-link {
+            transition: color 0.3s, border-bottom-color 0.3s;
+            /* Added padding for a larger click target */
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem;
+        }
+        .nav-link.active {
+            color: #0d9488; /* Teal-700 for active link */
+            border-bottom-color: #0d9488; /* Teal-700 */
+            font-weight: 600; /* Make active link slightly bolder */
+        }
+        .content-section {
+            display: none;
+        }
+        .content-section.active {
+            display: block;
+            /* Add a subtle fade-in animation */
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        .card {
+            background-color: white;
+            border-radius: 0.75rem; /* 12px */
+            /* Use a more subtle, modern shadow */
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
+            transition: transform 0.3s, box-shadow 0.3s;
+            border: 1px solid #e5e7eb; /* gray-200 border */
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            /* Slightly stronger shadow on hover */
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.07), 0 4px 6px -4px rgb(0 0 0 / 0.07);
+        }
+        /* Fade-in animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        /* Custom class for the "How-To Guide" links */
+        .guide-link {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            background-color: white;
+            border-radius: 0.5rem;
+            border: 1px solid #e5e7eb; /* gray-200 */
+            font-medium: 500;
+            color: #374151; /* gray-700 */
+            transition: all 0.2s ease-in-out;
+            box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        }
+        .guide-link:hover {
+            background-color: #f0fdfa; /* teal-50 */
+            border-color: #99f6e4; /* teal-200 */
+            color: #0f766e; /* teal-700 */
+            transform: translateY(-2px);
+            box-shadow: 0 2px 4px 0 rgb(0 0 0 / 0.05);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+
+    <!-- Header and Navigation -->
+    <header class="bg-white/95 backdrop-blur-md shadow-sm sticky top-0 z-50 border-b border-gray-200">
+        <div class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Added Library Name for branding -->
+                <div class="flex items-center">
+                    <!-- 1. Tajuk ditukar seperti yang diminta -->
+                    <a href="#home" class="nav-link text-lg font-bold text-teal-700 border-b-2 border-transparent">
+                        e-Library Portal
+                    </a>
+                </div>
+                <!-- Desktop Navigation -->
+                <nav class="hidden md:flex items-center space-x-4">
+                    <a href="#home" class="nav-link text-gray-600 hover:text-teal-700 border-b-2 border-transparent">HOME</a>
+                    <a href="#about" class="nav-link text-gray-600 hover:text-teal-700 border-b-2 border-transparent">ABOUT</a>
+                    <a href="#services" class="nav-link text-gray-600 hover:text-teal-700 border-b-2 border-transparent">SERVICES</a>
+                    <a href="#collections" class="nav-link text-gray-600 hover:text-teal-700 border-b-2 border-transparent">COLLECTIONS</a>
+                    <a href="#facilities" class="nav-link text-gray-600 hover:text-teal-700 border-b-2 border-transparent">FACILITIES</a>
+                    <a href="#guides" class="nav-link text-gray-600 hover:text-teal-700 border-b-2 border-transparent">GUIDES</a>
+                </nav>
+                 <!-- Login & Mobile Menu Button -->
+                 <div class="flex items-center space-x-4">
+                    <!-- 2. Desktop LOGIN button removed -->
+                    <button id="mobile-menu-button" class="md:hidden p-2 text-gray-600 hover:text-gray-800 rounded-md hover:bg-gray-100">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <!-- Mobile Menu -->
+        <div id="mobile-menu" class="md:hidden hidden bg-white border-t border-gray-200 shadow-lg">
+            <div class="px-2 pt-2 pb-3 space-y-1">
+                <a href="#home" class="nav-link-mobile block py-2 px-3 text-base font-medium text-gray-700 hover:bg-gray-100 rounded-md">HOME</a>
+                <a href="#about" class="nav-link-mobile block py-2 px-3 text-base font-medium text-gray-700 hover:bg-gray-100 rounded-md">ABOUT</a>
+                <a href="#services" class="nav-link-mobile block py-2 px-3 text-base font-medium text-gray-700 hover:bg-gray-100 rounded-md">SERVICES</a>
+                <a href="#collections" class="nav-link-mobile block py-2 px-3 text-base font-medium text-gray-700 hover:bg-gray-100 rounded-md">COLLECTIONS</a>
+                <a href="#facilities" class="nav-link-mobile block py-2 px-3 text-base font-medium text-gray-700 hover:bg-gray-100 rounded-md">FACILITIES</a>
+                <a href="#guides" class="nav-link-mobile block py-2 px-3 text-base font-medium text-gray-700 hover:bg-gray-100 rounded-md">GUIDES</a>
+            </div>
+            <!-- 3. Mobile LOGIN button section removed -->
+        </div>
+    </header>
+
+    <main class="container mx-auto p-4 sm:p-6 lg:p-8 mt-4">
+        <!-- Home Section -->
+        <section id="home" class="content-section active">
+            <!-- Search Hero -->
+            <div class="bg-gradient-to-br from-teal-50 to-cyan-50 border border-teal-200 rounded-xl shadow-lg p-8 md:p-12 mb-12 text-center overflow-hidden">
+                <h1 class="text-3xl md:text-5xl font-bold text-gray-800 mb-2">Search the Collections</h1>
+                <p class="text-gray-600 mb-6 max-w-2xl mx-auto">One step to access resources from all the UniKL's Library collection.</p>
+                <div class="max-w-2xl mx-auto">
+                    <div class="relative flex">
+                        <input type="search" placeholder="Search for books, articles, journals..." class="w-full p-4 pl-5 text-gray-700 border border-gray-300 rounded-full focus:outline-none focus:ring-4 focus:ring-teal-200/50 focus:border-teal-500 shadow-sm">
+                        <!-- Enhanced search button -->
+                        <button class="absolute top-0 right-0 h-full px-5 text-white bg-teal-600 rounded-r-full hover:bg-teal-700 transition duration-200 flex items-center justify-center">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Latest News -->
+            <div class="mb-12">
+                <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center">Highlights & Latest News</h2>
+                <div class="grid md:grid-cols-3 gap-8">
+                    <!-- Replaced pulse placeholders with actual images -->
+                    <div class="card overflow-hidden">
+                        <img src="https://placehold.co/600x400/0d9488/white?text=New+E-Books" alt="New E-Book Subscription" class="w-full h-48 object-cover">
+                        <div class="p-6">
+                            <h3 class="font-bold text-lg text-gray-800 mb-2">New E-Book Subscription</h3>
+                            <p class="text-gray-600 text-sm">We are excited to announce access to over 10,000 new e-books from major academic publishers.</p>
+                        </div>
+                    </div>
+                    <div class="card overflow-hidden">
+                        <img src="https://placehold.co/600x400/f59e0b/white?text=Extended+Hours" alt="Extended Examination Week Hours" class="w-full h-48 object-cover">
+                         <div class="p-6">
+                            <h3 class="font-bold text-lg text-gray-800 mb-2">Extended Examination Week Hours</h3>
+                            <p class="text-gray-600 text-sm">The library will be open until 10:00 PM on weekdays during the upcoming examination period.</p>
+                        </div>
+                    </div>
+                    <div class="card overflow-hidden">
+                        <img src="https://placehold.co/600x400/0284c7/white?text=Workshop" alt="Information Literacy Workshop" class="w-full h-48 object-cover">
+                         <div class="p-6">
+                            <h3 class="font-bold text-lg text-gray-800 mb-2">Information Literacy Workshop</h3>
+                            <p class="text-gray-600 text-sm">Join our upcoming workshop to learn effective research and citation skills. Sign up now!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Operating Hours -->
+            <div class="card p-6 md:p-8">
+                 <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">Operating Hours</h2>
+                 <div class="overflow-x-auto">
+                    <table class="w-full min-w-lg text-left">
+                        <thead class="bg-gray-100">
+                            <tr>
+                                <th class="p-4 font-semibold text-gray-700 border-b-2 border-gray-200">Period</th>
+                                <th class="p-4 font-semibold text-gray-700 border-b-2 border-gray-200">Days</th>
+                                <th class="p-4 font-semibold text-gray-700 border-b-2 border-gray-200">Time</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200">
+                            <tr class="hover:bg-gray-50">
+                                <td class="p-4">During Semester</td>
+                                <td class="p-4">Monday - Friday</td>
+                                <td class="p-4">8:00 AM - 6:00 PM</td>
+                            </tr>
+                            <!-- Enhanced the highlighted row for Examination Week -->
+                            <tr class="bg-teal-50/50 hover:bg-teal-50">
+                                <td class="p-4 font-medium text-teal-800">Examination Week</td>
+                                <td class="p-4 font-medium text-teal-800">Monday - Friday</td>
+                                <td class="p-4 text-teal-700 font-bold">8:00 AM - 10:00 PM</td>
+                            </tr>
+                            <tr class="hover:bg-gray-50">
+                                <td class="p-4">Semester Break</td>
+                                <td class="p-4">Monday - Friday</td>
+                                <td class="p-4">8:00 AM - 5:00 PM</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                 </div>
+                 <p class="text-center mt-4 text-sm text-gray-500">*Closed on Saturday, Sunday and Public Holidays.</p>
+            </div>
+        </section>
+
+        <!-- About Section -->
+        <section id="about" class="content-section">
+            <div class="card p-8 md:p-12 max-w-4xl mx-auto">
+                <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">About the Library</h1>
+                <!-- Added a lead paragraph for better intro -->
+                <p class="text-lg text-gray-600 text-center mb-8">Welcome to the Tunku Azizah Knowledge Centre Ibrahim Saad Learning Hub (TAKCISLH).</p>
+                <div class="space-y-6 text-gray-700 leading-relaxed">
+                    <p>Formerly known as Ibrahim Saad Resource Centre, was officially inaugurated on 25th August 2005 by YB Dato' Seri Dr Ibrahim Saad, whose name was selected to depict the resource centre in honour of his being the President of UniKL at that time. The Ibrahim Saad Learning Hub is a Section under the Dean's Office and is headed by a Librarian, assisted by two administrative staff.</p>
+                    <p>TAKCISLH building is visibly accessible to all users. It is located nearby the main entrance of UniKL MICET campus and close to the Student Development and Campus Lifestyle (SDCL) office. With an area of approximately 3,568 square feet, the two-storey building can accommodate about 180 users at a time.</p>
+                    <h2 class="text-2xl font-semibold text-gray-800 pt-4 border-t border-gray-200 mt-8">Our Collection</h2>
+                    <p>The library collection in various fields of study especially in science and technology has been intensified to support teaching, learning and research activities. Currently, the library has acquired about 10,351 collections of printed books, pertaining to Chemical and Bio-Engineering Technology. Electronic collections such as e-journals and e-books, published by major academic publishers such as Elsevier, Springer, Wiley Inter-Science, EBSCO Host, ProQuest, IEEE, Press Reader and others, have now exceeded around 100,000 titles.</p>
+                    <p>Online database, e-books and e-journals can be accessed via the library website. Currently, the library users have complete access to full text content from e-books and e-journals. The library has also developed a digital content platform called UniKL Institutional Repository (UniKL IR) consisting of final year projects (FYP), past year exam papers, research papers and student's award-winning projects.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Services Section -->
+        <section id="services" class="content-section">
+             <h1 class="text-3xl font-bold text-gray-800 mb-8 text-center">Library Services</h1>
+             <div class="grid lg:grid-cols-3 gap-8">
+                <!-- Borrowing Rules -->
+                <div class="lg:col-span-2 card p-8">
+                    <h2 class="text-2xl font-bold text-gray-800 mb-6">Borrowing Information</h2>
+                    <div class="space-y-6">
+                        <!-- Used definition list for better structure -->
+                        <div>
+                            <h3 class="font-semibold text-lg text-gray-800">Borrowing Privileges</h3>
+                            <p class="text-gray-600">Borrowing privileges vary for students and staff. Please check with the library counter for specific limits. Visitors and Exchange Students are not eligible to borrow materials.</p>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-lg text-gray-800">How to Borrow</h3>
+                            <p class="text-gray-600">You will need your ID card to borrow items. Take the items you would like to borrow along with your ID card to the Library Counter.</p>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-lg text-gray-800">Renewals</h3>
+                            <p class="text-gray-600">A loan can be renewed twice (2 times) online via 'My Library Account'. Renewals must be done at least one day before the due date. Renewals are not allowed if the item is on hold or if you have outstanding fines.</p>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-lg text-gray-800">Returns & Hold Requests</h3>
+                            <p class="text-gray-600">Items must be returned via the Book Return drops. If an item you need is on loan, you can place a hold request online via the Library Portal.</p>
+                        </div>
+                         <div>
+                            <h3 class="font-semibold text-lg text-gray-800">Overdue Items & Fines</h3>
+                            <p class="text-gray-600">The library charges fines on overdue items to encourage timely returns. You will receive 3 online notifications before your account is blocked. Outstanding fines of RM50.00 or more will result in a block.</p>
+                        </div>
+                        <div>
+                            <h3 class="font-semibold text-lg text-gray-800">Lost and Damaged Resources</h3>
+                            <p class="text-gray-600">If you have lost or damaged a library item, please report it immediately. Users must replace the item or pay the current market price, in addition to a RM20.00 processing fee.</p>
+                        </div>
+                    </div>
+                </div>
+                <!-- Other Services -->
+                <div class="space-y-8">
+                    <!-- Enhanced card with accent color -->
+                    <div class="card p-6 border-l-4 border-amber-500">
+                        <h3 class="text-xl font-bold text-gray-800 mb-3">Room Booking</h3>
+                        <p class="text-gray-600 mb-4">Book discussion rooms for group study and projects. Check availability and book online.</p>
+                        <a href="#facilities" class="nav-switch font-semibold text-amber-600 hover:text-amber-700 transition duration-200">Book a Room &rarr;</a>
+                    </div>
+                     <div class="card p-6">
+                        <h3 class="text-xl font-bold text-gray-800 mb-3">Printing Services</h3>
+                        <p class="text-gray-600">Printing and photocopying services are available at the library. Please inquire at the counter for rates and assistance.</p>
+                    </div>
+                     <div class="card p-6">
+                        <h3 class="text-xl font-bold text-gray-800 mb-3">Information Literacy Classes</h3>
+                        <p class="text-gray-600">Classes conducted by the Librarian to upskill students on how to search for and effectively use information and resources. Conducted upon lecturer's request.</p>
+                    </div>
+                </div>
+             </div>
+        </section>
+
+        <!-- Collections Section -->
+        <section id="collections" class="content-section">
+            <h1 class="text-3xl font-bold text-gray-800 mb-8 text-center">Our Collections & Resources</h1>
+            <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Added icons to collection cards -->
+                <a href="#" class="card p-6 flex items-center space-x-4 hover:bg-teal-50 hover:border-teal-300">
+                    <svg class="w-8 h-8 text-teal-600 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m5.231 13.5h-3.031a.75.75 0 01-.684-.445l-1.423-2.134a.75.75 0 01.217-1.031l3.03-1.78a.75.75 0 011.03.217l2.134 1.423a.75.75 0 01.445.684v3.031a.75.75 0 01-.75.75z" /></svg>
+                    <h3 class="font-semibold text-lg text-gray-700">SCOPUS Publications</h3>
+                </a>
+                <!-- 1. Updated link to point to the new page and open in a new tab -->
+                <a href="ebook_portal.html" target="_blank" rel="noopener noreferrer" class="card p-6 flex items-center space-x-4 hover:bg-teal-50 hover:border-teal-300">
+                    <svg class="w-8 h-8 text-teal-600 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>
+                    <h3 class="font-semibold text-lg text-gray-700">E-Book Gallery</h3>
+                </a>
+                <a href="#" class="card p-6 flex items-center space-x-4 hover:bg-teal-50 hover:border-teal-300">
+                    <svg class="w-8 h-8 text-teal-600 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M16.5 3.75V16.5L12 14.25 7.5 16.5V3.75m9 0H18A2.25 2.25 0 0120.25 6v12A2.25 2.25 0 0118 20.25H6A2.25 2.25 0 013.75 18V6A2.25 2.25 0 016 3.75h1.5m9 0h-9" /></svg>
+                    <h3 class="font-semibold text-lg text-gray-700">New E-Book References</h3>
+                </a>
+                <a href="#" class="card p-6 flex items-center space-x-4 hover:bg-teal-50 hover:border-teal-300">
+                    <svg class="w-8 h-8 text-teal-600 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25c0 .414.336.75.75.75h2.25a.75.75 0 00.75-.75V13.5a.75.75 0 00-.75-.75h-2.25a.75.75 0 00-.75.75v3.75z" /><path stroke-linecap="round" stroke-linejoin="round" d="M13.5 19.5h3v-2.25A.75.75 0 0015.75 16.5h-2.25a.75.75 0 00-.75.75v2.25zM13.5 14.25v-1.5a.75.75 0 01.75-.75h1.5a.75.75 0 01.75.75v1.5m-3 0v-1.5c0-.414.336-.75.75-.75h1.5a.75.75 0 01.75.75v1.5m-6-3v.75a.75.75 0 01-.75.75h-.75a.75.75 0 01-.75-.75v-.75m0-3v-.75A.75.75 0 015.25 9h.75a.75.75 0 01.75.75v.75m0 3v-.75A.75.75 0 005.25 12h-.75a.75.75 0 00-.75.75v.75" /><path stroke-linecap="round" stroke-linejoin="round" d="M3 13.5v-1.5c0-.414.336-.75.75-.75h1.5a.75.75 0 01.75.75v1.5m-3 0v-1.5A.75.75 0 013.75 12h1.5a.75.75 0 01.75.75v1.5m0 3v-.75A.75.75 0 005.25 15h-.75a.75.75 0 00-.75.75v.75M3 16.5v-.75c0-.414.336-.75.75-.75h1.5a.75.75 0 01.75.75v.75M3 19.5v-2.25A.75.75 0 013.75 16.5h2.25a.75.75 0 01.75.75v2.25m0-15v-2.25A.75.75 0 005.25 1.5h-2.25a.75.75 0 00-.75.75v2.25m13.5 0v-2.25A.75.75 0 0015.75 1.5h-2.25a.75.75 0 00-.75.75v2.25" /></svg>
+                    <h3 class="font-semibold text-lg text-gray-700">Final Year Project Titles</h3>
+                </a>
+                <a href="#" class="card p-6 flex items-center space-x-4 hover:bg-teal-50 hover:border-teal-300">
+                    <svg class="w-8 h-8 text-teal-600 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5z" /></svg>
+                    <h3 class="font-semibold text-lg text-gray-700">Master & PhD Titles</h3>
+                </a>
+                 <a href="#" class="card p-6 flex items-center space-x-4 hover:bg-teal-50 hover:border-teal-300">
+                    <svg class="w-8 h-8 text-teal-600 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    <h3 class="font-semibold text-lg text-gray-700">Malaysian Standard</h3>
+                </a>
+            </div>
+
+            <div class="mt-12 card p-8">
+                 <h2 class="text-2xl font-bold text-gray-800 mb-6">Resource Platforms</h2>
+                 <div class="space-y-6 divide-y divide-gray-200">
+                    <div class="pt-6 first:pt-0">
+                        <h3 class="font-semibold text-lg text-gray-800">UniKL WebOPAC (Online Catalogue)</h3>
+                        <p class="text-gray-600">Allows users to search, locate, and check the availability of library materials like books and theses. You can also renew items and view your borrowing history.</p>
+                    </div>
+                    <div class="pt-6">
+                        <h3 class="font-semibold text-lg text-gray-800">Online Databases</h3>
+                        <p class="text-gray-600">Access a wide range of scholarly materials including journal articles, e-books, and conference papers from top publishers to support your learning and research.</p>
+                    </div>
+                    <div class="pt-6">
+                        <h3 class="font-semibold text-lg text-gray-800">Institutional Repository (UniKL IR)</h3>
+                        <p class="text-gray-600">An archive of the intellectual output of UniKL's community, including articles, theses, dissertations, and past examination papers.</p>
+                    </div>
+                 </div>
+            </div>
+        </section>
+
+        <!-- Facilities Section -->
+        <section id="facilities" class="content-section">
+            <h1 class="text-3xl font-bold text-gray-800 mb-8 text-center">Facilities</h1>
+            <div class="card p-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">Discussion Room Booking</h2>
+                <div class="grid md:grid-cols-2 gap-8 items-start">
+                    <div>
+                        <p class="text-gray-600 mb-6">The library offers several discussion rooms equipped for group study and collaborative work. Each room can be booked for a maximum of 2 hours per session. Please select a service, date, and time to make your reservation.</p>
+                        <div class="space-y-4">
+                            <!-- Enhanced info blocks -->
+                            <div class="flex items-start p-4 bg-gray-50/70 rounded-lg border border-gray-200">
+                                <svg class="w-6 h-6 text-teal-700 mr-4 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                                <div>
+                                    <h4 class="font-semibold text-gray-800">4 Discussion Rooms</h4>
+                                    <p class="text-sm text-gray-500">Located on the Ground Level, ideal for group work.</p>
+                                </div>
+                            </div>
+                            <div class="flex items-start p-4 bg-gray-50/70 rounded-lg border border-gray-200">
+                                <svg class="w-6 h-6 text-teal-700 mr-4 mt-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                                <div>
+                                    <h4 class="font-semibold text-gray-800">2-Hour Slots</h4>
+                                    <p class="text-sm text-gray-500">Each booking is for a 2-hour period.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gray-50 p-6 rounded-lg border border-gray-200">
+                        <h3 class="font-bold text-lg mb-4 text-gray-800">Make a Booking</h3>
+                        <!-- 2. Added ID to the form -->
+                        <form class="space-y-4" id="bookingForm">
+                             <div>
+                                <label for="room" class="block text-sm font-medium text-gray-700">Select Room</label>
+                                <select id="room" name="room" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm rounded-md shadow-sm">
+                                    <option>Discussion Room 1</option>
+                                    <option>Discussion Room 2</option>
+                                    <option>Discussion Room 3</option>
+                                    <option>Discussion Room 4</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="date" class="block text-sm font-medium text-gray-700">Date</label>
+                                <input type="date" id="date" name="date" class="mt-1 focus:ring-teal-500 focus:border-teal-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" required>
+                            </div>
+                            <!-- 3. Added "Your Email" field -->
+                            <div>
+                                <label for="user_email" class="block text-sm font-medium text-gray-700">Your Email</label>
+                                <input type="email" id="user_email" name="user_email" placeholder="So we can contact you" class="mt-1 focus:ring-teal-500 focus:border-teal-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md" required>
+                            </div>
+                            <div>
+                                <label for="time" class="block text-sm font-medium text-gray-700">Time</label>
+                                <!-- 4. Added 'value' attributes to options for easier logic -->
+                                <select id="time" name="time" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-teal-500 focus:border-teal-500 sm:text-sm rounded-md shadow-sm" required>
+                                    <option value="09:00 AM - 11:00 AM">09:00 AM - 11:00 AM</option>
+                                    <option value="11:00 AM - 01:00 PM">11:00 AM - 01:00 PM</option>
+                                    <option value="02:00 PM - 04:00 PM">02:00 PM - 04:00 PM</option>
+                                    <option value="04:00 PM - 06:00 PM">04:00 PM - 06:00 PM</option>
+                                </select>
+                            </div>
+                             <div>
+                                <!-- 5. Added ID to button -->
+                                <button type="submit" id="bookNowBtn" class="w-full bg-teal-600 text-white py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition duration-200">Book Now</button>
+                            </div>
+                            <!-- 6. Added a message area for feedback -->
+                            <p id="bookingMessage" class="text-sm text-center font-medium"></p>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Guides Section -->
+        <section id="guides" class="content-section">
+             <h1 class="text-3xl font-bold text-gray-800 mb-8 text-center">Research Guides & Tools</h1>
+             <div class="grid lg:grid-cols-2 gap-8">
+                <div class="card p-8">
+                     <h2 class="text-2xl font-bold text-gray-800 mb-4">Research Assistance</h2>
+                     <p class="text-gray-600 leading-relaxed">Having trouble getting resources for your research? Articles that you require are not available in the databases? Books you need cannot be found anywhere? We can help you get articles at no extra cost and recommend resources to assist with your research.</p>
+                </div>
+                <!-- Enhanced card with accent color -->
+                <div class="card p-8 bg-amber-50/50 border-amber-200 border">
+                     <h2 class="text-2xl font-bold text-gray-800 mb-4">Reference Tool: Mendeley</h2>
+                     <p class="text-gray-600 mb-4">Mendeley is a free reference manager and academic social network that can help you organise your research, collaborate with others online, and discover the latest research.</p>
+                     <ul class="list-disc list-inside text-gray-600 space-y-2">
+                        <li>Generate citations and bibliographies</li>
+                        <li>Import and organize PDFs</li>
+                        <li>Collaborate and share with colleagues</li>
+                        <li>Access your papers anywhere</li>
+                     </ul>
+                </div>
+             </div>
+             <div class="mt-12 card p-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-6">How-To Guides</h2>
+                <!-- Used the new .guide-link style -->
+                <div class="grid sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    <a href="#" class="guide-link">
+                        <span>Login to My Library Account</span><span>&rarr;</span>
+                    </a>
+                    <a href="#" class="guide-link">
+                        <span>Renew an item(s)</span><span>&rarr;</span>
+                    </a>
+                    <a href="#" class="guide-link">
+                        <span>Request for an item(s)</span><span>&rarr;</span>
+                    </a>
+                    <a href="#" class="guide-link">
+                        <span>Request an Intra-Library Loan</span><span>&rarr;</span>
+                    </a>
+                    <a href="#" class="guide-link">
+                        <span>Request an Inter-Library Loan</span><span>&rarr;</span>
+                    </a>
+                    <a href="#" class="guide-link">
+                        <span>Request a Purchase</span><span>&rarr;</span>
+                    </a>
+                    <a href="#" class="guide-link">
+                        <span>Request for Document Delivery</span><span>&rarr;</span>
+                    </a>
+                    <a href="#" class="guide-link">
+                        <span>Submit to e-Repository</span><span>&rarr;</span>
+                    </a>
+                    <a href="#" class="guide-link">
+                        <span>Pay Fines Online</span><span>&rarr;</span>
+                    </a>
+                </div>
+             </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-white border-t border-gray-200 mt-12">
+        <div class="container mx-auto py-8 px-4 sm:px-6 lg:px-8 text-center text-gray-500 text-sm">
+            &copy; 2025 Tunku Azizah Knowledge Centre, UniKL-MICET. All Rights Reserved.
+        </div>
+    </footer>
+
+    <!-- 7. Added Firebase SDKs -->
+    <script type="module">
+        // Import Firebase functions
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        // 8. Import functions for 'write' (addDoc) and 'read' (getDocs, query, where)
+        import { getFirestore, collection, addDoc, getDocs, query, where, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        // --- UPDATED: Added onAuthStateChanged ---
+        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+
+        // --- 9. START: Firebase & EmailJS Configuration ---
+        
+        // Your Firebase config from the previous message
+        const firebaseConfig = {
+          apiKey: "AIzaSyDUtYojGMeVDnax4UuBpwyCURJcH18_ZhA",
+          authDomain: "e-library-de7af.firebaseapp.com",
+          projectId: "e-library-de7af",
+          storageBucket: "e-library-de7af.firebasestorage.app",
+          messagingSenderId: "229459415793",
+          appId: "1:229459415793:web:52ab75e5d10e165738cf50",
+          measurementId: "G-G14WKLY40F"
+        };
+
+        // !! IMPORTANT !!
+        // User's EmailJS keys have been added
+        const EMAILJS_PUBLIC_KEY = "TAZiO_oO6kbdBcgX-"; // <-- UPDATED
+        const EMAILJS_SERVICE_ID = "service_6eihzb6"; // <-- UPDATED
+        const EMAILJS_TEMPLATE_ID = "template_78woa9d"; // <-- UPDATED
+
+        // --- END: Configuration ---
+
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        setLogLevel('Debug');
+
+        // --- NEW: Add a state variable to track auth status ---
+        let isAuthReady = false;
+
+        // --- UPDATED: Use onAuthStateChanged to handle auth state ---
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // User is signed in (anonymously or otherwise)
+                console.log("Firebase Auth ready. User UID:", user.uid);
+                isAuthReady = true;
+            } else {
+                // User is signed out. Try to sign in anonymously.
+                console.log("No user signed in. Attempting anonymous sign-in...");
+                signInAnonymously(auth).catch((error) => {
+                    console.error("Anonymous sign-in failed:", error);
+                    // Show error to user in the booking message area
+                    const bookingMessage = document.getElementById('bookingMessage');
+                    if (bookingMessage) {
+                        bookingMessage.textContent = "Error: Could not connect to booking service. Please check your internet connection or try refreshing. (AUTH_FAILED)";
+                        bookingMessage.classList.add('text-red-600');
+                    }
+                    // Alert if the element isn't found yet
+                    if (!bookingMessage) {
+                        alert("Could not connect to booking service. Please refresh.");
+                    }
+                    // Check if anonymous auth is disabled
+                    if (error.code === 'auth/operation-not-allowed') {
+                        console.error("CRITICAL: Anonymous sign-in is not enabled in the Firebase project settings.");
+                        if (bookingMessage) {
+                            bookingMessage.textContent = "Error: Booking system is not enabled by the administrator. (AUTH_DISABLED)";
+                        } else {
+                            alert("Booking system is not enabled by the administrator. (AUTH_DISABLED)");
+                        }
+                    }
+                });
+            }
+        });
+
+
+        // Initialize EmailJS (if key is provided)
+        if (EMAILJS_PUBLIC_KEY !== "YOUR_PUBLIC_KEY") {
+            emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+        }
+
+
+        // Main Tab Navigation Script
+        document.addEventListener('DOMContentLoaded', function () {
+            const navLinks = document.querySelectorAll('.nav-link');
+            const navSwitchLinks = document.querySelectorAll('.nav-switch');
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            const mobileNavLinks = document.querySelectorAll('.nav-link-mobile');
+            const contentSections = document.querySelectorAll('.content-section');
+            
+            // Store the header element
+            const header = document.querySelector('header');
+            let lastScrollY = window.scrollY;
+
+            function switchTab(targetId) {
+                // Deactivate all sections and links
+                contentSections.forEach(section => section.classList.remove('active'));
+                navLinks.forEach(link => link.classList.remove('active'));
+                mobileNavLinks.forEach(link => link.classList.remove('active')); // Also for mobile
+
+                // Activate the target section
+                const targetSection = document.getElementById(targetId);
+                if (targetSection) {
+                    targetSection.classList.add('active');
+                }
+
+                // Activate the target desktop link
+                const targetLink = document.querySelector(`.nav-link[href="#${targetId}"]`);
+                if (targetLink) {
+                    targetLink.classList.add('active');
+                }
+                
+                // Activate the target mobile link
+                const targetMobileLink = document.querySelector(`.nav-link-mobile[href="#${targetId}"]`);
+                 if (targetMobileLink) {
+                    targetMobileLink.classList.add('active'); // Add active class (e.g., bg-teal-50)
+                }
+                
+                // Close mobile menu
+                mobileMenu.classList.add('hidden');
+                
+                // Scroll to top
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+            
+            // Handle main navigation clicks
+            navLinks.forEach(link => {
+                link.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    // Don't switch tab if it's just the header brand link
+                    if (this.classList.contains('text-lg')) {
+                        switchTab('home');
+                        return;
+                    }
+                    const targetId = this.getAttribute('href').substring(1);
+                    switchTab(targetId);
+                });
+            });
+
+            // Handle in-page navigation links (like 'Book a Room')
+            navSwitchLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href').substring(1);
+                    switchTab(targetId);
+                });
+            });
+            
+            // Handle mobile navigation clicks
+             mobileNavLinks.forEach(link => {
+                link.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href').substring(1);
+                    switchTab(targetId);
+                });
+            });
+
+            // Toggle mobile menu
+            mobileMenuButton.addEventListener('click', function () {
+                mobileMenu.classList.toggle('hidden');
+            });
+            
+            // Set initial state based on hash or default to home
+            const initialTab = window.location.hash.substring(1) || 'home';
+            // Use setTimeout to ensure content is loaded before switching
+            setTimeout(() => switchTab(initialTab), 0);
+            
+            
+            // --- 10. NEW: Booking Availability & Form Logic ---
+            
+            const bookingForm = document.getElementById('bookingForm');
+            const bookNowBtn = document.getElementById('bookNowBtn');
+            const bookingMessage = document.getElementById('bookingMessage');
+            const roomSelect = document.getElementById('room');
+            const dateSelect = document.getElementById('date');
+            const timeSelect = document.getElementById('time');
+
+            // --- Function to check booked slots ---
+            async function checkAvailability() {
+                const roomVal = roomSelect.value;
+                const dateVal = dateSelect.value;
+
+                // Reset all time options
+                for (const option of timeSelect.options) {
+                    option.disabled = false;
+                    option.textContent = option.value;
+                }
+
+                if (!dateVal) return; // Don't query if no date is selected
+
+                // --- NEW: Check auth status before querying ---
+                if (!isAuthReady || !auth.currentUser) {
+                    bookingMessage.textContent = "Connecting to booking service... please wait.";
+                    bookingMessage.classList.add('text-gray-600');
+                    console.log("Auth not ready, delaying availability check...");
+                    // Retry after a short delay
+                    setTimeout(checkAvailability, 1500);
+                    return;
+                }
+
+                bookingMessage.textContent = "Checking available slots...";
+                bookingMessage.classList.remove('text-red-600', 'text-green-600');
+                bookingMessage.classList.add('text-gray-600');
+
+                try {
+                    // Query Firestore for bookings on the selected date
+                    const q = query(collection(db, "roomBookings"), where("date", "==", dateVal));
+                    const querySnapshot = await getDocs(q);
+
+                    const bookedSlots = new Set();
+                    querySnapshot.forEach((doc) => {
+                        const data = doc.data();
+                        // Create a unique key: "Discussion Room 1_09:00 AM - 11:00 AM"
+                        bookedSlots.add(`${data.room}_${data.time}`);
+                    });
+
+                    // Now, disable the booked slots
+                    for (const option of timeSelect.options) {
+                        const key = `${roomVal}_${option.value}`;
+                        if (bookedSlots.has(key)) {
+                            option.disabled = true;
+                            option.textContent = `${option.value} (Booked)`;
+                        }
+                    }
+                    bookingMessage.textContent = "Slots updated.";
+                } catch (error) {
+                    console.error("Error checking availability: ", error);
+                    // --- UPDATED: Provide more specific feedback ---
+                    if (error.code === 'permission-denied' || error.message.includes('permissions')) {
+                        bookingMessage.textContent = "Error: Booking system permissions are not set correctly by the admin. (READ_FAILED)";
+                    } else {
+                        bookingMessage.textContent = "Could not check slots. Please try again.";
+                    }
+                    bookingMessage.classList.add('text-red-600');
+                }
+            }
+
+            // --- Add event listeners to check when room or date changes ---
+            roomSelect.addEventListener('change', checkAvailability);
+            dateSelect.addEventListener('change', checkAvailability);
+
+
+            // --- Logic to handle form submission ---
+            if (bookingForm) {
+                bookingForm.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+
+                    // --- NEW: Check auth status before submitting ---
+                    if (!isAuthReady || !auth.currentUser) {
+                        bookingMessage.textContent = "Error: Not connected to booking service. Please wait or refresh the page.";
+                        bookingMessage.classList.add('text-red-600');
+                        return;
+                    }
+                    
+                    const room = roomSelect.value;
+                    const date = dateSelect.value;
+                    const time = timeSelect.value;
+                    const userEmail = document.getElementById('user_email').value;
+
+                    // Show loading state
+                    bookNowBtn.disabled = true;
+                    bookNowBtn.textContent = "Booking...";
+                    bookingMessage.textContent = "";
+                    bookingMessage.classList.remove('text-red-600', 'text-green-600');
+
+                    // Check if EmailJS is configured
+                    if (EMAILJS_PUBLIC_KEY === "YOUR_PUBLIC_KEY") {
+                        bookingMessage.textContent = "Booking system is not yet configured by admin.";
+                        bookingMessage.classList.add('text-red-600');
+                        bookNowBtn.disabled = false;
+                        bookNowBtn.textContent = "Book Now";
+                        return;
+                    }
+
+                    try {
+                        // --- Part A: Save to Firestore ---
+                        const docRef = await addDoc(collection(db, "roomBookings"), {
+                            room: room,
+                            date: date,
+                            time: time,
+                            userEmail: userEmail,
+                            bookingTimestamp: new Date()
+                        });
+                        console.log("Booking saved with ID: ", docRef.id);
+
+                        // --- Part B: Send Email with EmailJS ---
+                        const templateParams = {
+                            room: room,
+                            date: date,
+                            time: time,
+                            user_email: userEmail,
+                            // Add the email for the staff here
+                            to_email: "nurelina@unikl.edu.my, sitihasliza@unikl.edu.my, mohdazwan@unikl.edu.my"
+                        };
+                        
+                        await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams);
+                        console.log("Email notification sent.");
+
+                        // Show success message
+                        bookingMessage.textContent = "Booking successful! Notification sent.";
+                        bookingMessage.classList.add('text-green-600');
+                        bookingForm.reset();
+                        
+                        // Re-check availability to disable the slot just booked
+                        checkAvailability();
+
+                    } catch (error) {
+                        console.error("Error booking room: ", error);
+                        // --- UPDATED: Provide more specific feedback ---
+                        if (error.code === 'permission-denied' || error.message.includes('permissions')) {
+                            bookingMessage.textContent = "Error: Booking system permissions are not set correctly by the admin. (WRITE_FAILED)";
+                        } else {
+                            bookingMessage.textContent = "Error: Could not complete booking. Please try again.";
+                        }
+                        bookingMessage.classList.add('text-red-600');
+                    } finally {
+                        // Reset button
+                        bookNowBtn.disabled = false;
+                        bookNowBtn.textContent = "Book Now";
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>
+
